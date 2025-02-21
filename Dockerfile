@@ -31,7 +31,7 @@ ENV OMP_NUM_THREADS=4
 # Running as `docker run -e DOCLING_ARTIFACTS_PATH=/root/.cache/docling/models` will use the
 # model weights included in the container image.
 
-COPY main.py /app/src
+COPY main.py /app/src/
 
 WORKDIR /app/src
 
