@@ -24,7 +24,16 @@ jobs:
       run: echo "IMAGE_TAG=$(date +%s)" >> $GITHUB_ENV
 
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag docling:${{ env.IMAGE_TAG }}
+      run: docker build . --file Dockerfile --tag ghcr.io/${{ github.repository }}:${{ env.IMAGE_TAG }}
 
     - name: Push the Docker image
-      run: docker push docling:${{ env.IMAGE_TAG }}
+      run: docker push ghcr.io/${{ github.repository }}:${{ env.IMAGE_TAG }}
+
+    - name: Log in to GitHub Container Registry
+      run: echo "${{ secrets.REPO_PASS }}" | docker login registry.cn-hangzhou.aliyuncs.com -u ${{ secrets.REPO_USER }} --password-stdin
+
+    - name: Retag
+      run: docker tag ghcr.io/${{ github.repository }}:${{ env.IMAGE_TAG }} registry.cn-hangzhou.aliyuncs.com/sync/hub:docling-${{ env.IMAGE_TAG }}
+      
+    - name: Push the Docker image 2
+      run: docker push registry.cn-hangzhou.aliyuncs.com/sync/hub:docling-${{ env.IMAGE_TAG }}
