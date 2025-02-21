@@ -11,8 +11,8 @@ RUN apt-get update \
 # This will install torch with *only* cpu support
 # Remove the --extra-index-url part if you want to install all the gpu requirements
 # For more details in the different torch distribution visit https://pytorch.org/.
-RUN pip install --no-cache-dir docling torch==2.4 --extra-index-url https://download.pytorch.org/whl/cu121
-RUN pip install --no-cache-dir fastapi>=0.115.6 uvicorn>=0.32.1 python-multipart>=0.0.19
+RUN python3.11 -m pip install --no-cache-dir docling torch==2.4 --extra-index-url https://download.pytorch.org/whl/cu121
+RUN python3.11 -m pip install --no-cache-dir fastapi>=0.115.6 uvicorn>=0.32.1 python-multipart>=0.0.19
 
 ENV HF_HOME=/tmp/
 ENV TORCH_HOME=/tmp/
@@ -35,4 +35,4 @@ COPY main.py /app/src/
 
 WORKDIR /app/src
 
-CMD [ "python3", "main.py" ]
+CMD [ "python3.11", "main.py" ]
