@@ -1,38 +1,79 @@
-FROM ghcr.io/ai-dock/python:3.11-v2-cuda-12.1.1-devel-22.04
+FROM ubuntu:20.04
 
+ENV DEBIAN_FRONTEND=noninteractive
 
-ENV GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
+RUN \
+    echo "Running apt update." && \
+    apt update  && \
+    echo "Installing dependencies with apt."  && \
+    apt install -y cmake libgtk-3-dev libgtkmm-3.0-dev liblensfun-dev librsvg2-dev \
+        liblcms2-dev libfftw3-dev libiptcdata0-dev libtiff5-dev libcanberra-gtk3-dev \
+        liblensfun-bin libexpat1-dev libbrotli-dev zlib1g-dev libinih-dev \
+        adwaita-icon-theme-full gettext libarchive-tools zstd libgif-dev \
+        libwebp-dev libwebpdemux2 \
+        cmake libomp-dev libjpeg-dev libopencv-contrib-dev \
+        libopencv-dev zlib1g-dev libinih-dev gettext libarchive-tools zstd
 
-RUN apt-get update \
-    && apt-get install -y libgl1 libglib2.0-0 curl wget git procps \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        fakeroot \
+        gawk \
+        lsb-release \
+        curl \
+        ca-certificates git bash wget curl sudo
+RUN \
+    echo "Installing makedeb..." && \
+    curl -Ss -qgb "" -fLC - --retry 3 --retry-delay 3 -o makedeb.deb \
+    "https://github.com/makedeb/makedeb/releases/download/v16.1.0-beta1/makedeb-beta_16.1.0-beta1_amd64_focal.deb"  && \
+    dpkg -i makedeb.deb
 
-# This will install torch with *only* cpu support
-# Remove the --extra-index-url part if you want to install all the gpu requirements
-# For more details in the different torch distribution visit https://pytorch.org/.
-RUN python3.11 -m pip install --no-cache-dir docling torch==2.4 --extra-index-url https://download.pytorch.org/whl/cu121
-RUN python3.11 -m pip install --no-cache-dir fastapi>=0.115.6 uvicorn>=0.32.1 python-multipart>=0.0.19
+RUN \
+    MAIN_VERSION='5.11' && \
+    echo "Cloning RawTherapee $MAIN_VERSION." && \
+    git clone --depth 1 --branch "$MAIN_VERSION" https://github.com/RawTherapee/RawTherapee.git ./main
 
-ENV HF_HOME=/tmp/
-ENV TORCH_HOME=/tmp/
+RUN \
+    useradd -m -s /bin/bash builder && \
+    echo 'builder ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
+    chown -R builder:builder ./main
 
-RUN docling-tools models download
+USER builder
 
-ENV DOCLING_ARTIFACTS_PATH=/root/.cache/docling/models
+RUN cd ./main/tools/makedeb  && \
+    echo "Building and installing libjxl..." && \
+    makedeb -si --no-confirm -p PKGBUILD.libjxl
 
-# On container environments, always set a thread budget to avoid undesired thread congestion.
-ENV OMP_NUM_THREADS=4
+USER root
 
-# On container shell:
-# > cd /root/
-# > python minimal.py
+RUN cd ./main && \
+    EXIV2_VERSION='v0.28.3' && \
+    echo "Cloning Exiv2 $EXIV2_VERSION." && \
+    git clone --depth 1 --branch "$EXIV2_VERSION" https://github.com/Exiv2/exiv2.git ext/exiv2 && \
+    \
+    echo "Configuring build." && \
+    mkdir ext/exiv2/build && \
+    cd ext/exiv2/build && \
+    cmake -DCMAKE_BUILD_TYPE=Release -DEXIV2_ENABLE_BMFF=ON .. && \
+    \
+    echo "Building and installing." && \
+    make -j$(nproc) install
 
-# Running as `docker run -e DOCLING_ARTIFACTS_PATH=/root/.cache/docling/models` will use the
-# model weights included in the container image.
-
-COPY main.py /app/src/
-
-WORKDIR /app/src
-
-CMD [ "python3.11", "main.py" ]
+RUN cd ./main && \
+    LIBRSVG2_VERSION='2.52.2' && \
+    echo "Cloning Librsvg2 $LIBRSVG2_VERSION." && \
+    git clone --depth 1 --branch "$LIBRSVG2_VERSION" https://gitlab.gnome.org/GNOME/librsvg.git ext/librsvg2 && \
+    \
+    echo "Installing required dependencies with apt." && \
+    apt install -y rustc cargo gtk-doc-tools libgirepository1.0-dev && \
+    \
+    echo "Updating PATH." && \
+    export PATH="$PATH:/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0" && \
+    \
+    echo "Configuring build." && \
+    cd ext/librsvg2 && \
+    sh autogen.sh && \
+    \
+    echo "Building and installing." && \
+    make install
+          
