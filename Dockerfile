@@ -13,7 +13,7 @@ RUN \
         libwebp-dev libwebpdemux2 \
         cmake libomp-dev libjpeg-dev libopencv-contrib-dev \
         libopencv-dev zlib1g-dev libinih-dev gettext libarchive-tools zstd \
-        build-essential pkg-config autoconf libtool libcairo2-dev libcairo-gobject-dev \
+        build-essential pkg-config autoconf libtool libcairo2-dev  \
         libharfbuzz-dev libxml2-dev libpango1.0-dev libglib2.0-dev  \
         build-essential fakeroot  gawk  lsb-release  curl ca-certificates git bash wget curl sudo
 RUN \
