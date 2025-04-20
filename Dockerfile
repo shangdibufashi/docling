@@ -12,16 +12,10 @@ RUN \
         adwaita-icon-theme-full gettext libarchive-tools zstd libgif-dev \
         libwebp-dev libwebpdemux2 \
         cmake libomp-dev libjpeg-dev libopencv-contrib-dev \
-        libopencv-dev zlib1g-dev libinih-dev gettext libarchive-tools zstd
-
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        build-essential \
-        fakeroot \
-        gawk \
-        lsb-release \
-        curl \
-        ca-certificates git bash wget curl sudo
+        libopencv-dev zlib1g-dev libinih-dev gettext libarchive-tools zstd \
+        build-essential pkg-config autoconf libtool libcairo2-dev libcairo-gobject-dev \
+        libharfbuzz-dev libxml2-dev libpango1.0-dev libglib2.0-dev  \
+        build-essential fakeroot  gawk  lsb-release  curl ca-certificates git bash wget curl sudo
 RUN \
     echo "Installing makedeb..." && \
     curl -Ss -qgb "" -fLC - --retry 3 --retry-delay 3 -o makedeb.deb \
